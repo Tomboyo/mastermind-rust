@@ -1,6 +1,6 @@
 pub struct Options {
-    pub code_length: u32,
-    pub code_base: u32,
+    pub code_length: usize,
+    pub code_base: usize,
 }
 
 pub fn from_stdin() -> Options {
