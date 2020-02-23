@@ -2,6 +2,7 @@ pub mod rank;
 
 use std::collections::BTreeMap;
 
+use crate::code;
 use crate::code::Code;
 use crate::response::Response;
 
@@ -25,8 +26,7 @@ where F: Fn(&Tree) -> f64 {
         //        (recur) otherwise, Tree { guess, generate(...) }
         // then reduce the trees down to the optimal one.
         .map(|guess| {
-            let map = answers_by_response(&guess, &answers);
-
+            //let map = answers_by_response(&guess, &answers);
             Tree { guess: guess, children: BTreeMap::new() }
         }) //dummy
         .fold(None, |acc, tree| match acc {
@@ -42,7 +42,7 @@ fn answers_by_response<'a>(
 ) -> BTreeMap<Response, Vec<&'a Code<'a>>> {
     answers.iter()
         .fold(BTreeMap::new(), |mut map, answer| {
-            map.entry(guess.compare(answer))
+            map.entry(code::compare(guess, answer))
                 .or_insert(Vec::new())
                 .push(answer);
             map
@@ -68,13 +68,18 @@ mod tests {
 
     #[test]
     fn test_generate() {
-        let universe = Code::universe(2, 2);
+        let c00 = &[0, 0][..];
+        let c01 = &[0, 1][..];
+        let c10 = &[1, 0][..];
+        let c11 = &[1, 1][..];
+        let universe = vec![c00, c01, c10, c11];
+
         // prefer trees based on their guess; 0,0 is "best".
         let rank = |tree: &Tree| match tree.guess {
-            Code { data: [0, 0] } => 0f64,
-            Code { data: [0, 1] } => 1f64,
-            Code { data: [1, 0] } => 2f64,
-            Code { data: [1, 1] } => 3f64,
+            &[0, 0] => 0f64,
+            &[0, 1] => 1f64,
+            &[1, 0] => 2f64,
+            &[1, 1] => 3f64,
             x => panic!("Unexpected test code {:?}", x)
         };
 
@@ -92,12 +97,8 @@ mod tests {
                                (0,2) => (10, { (2,0) => () })
                              })})
         */
-        // todo: consider tree owning code and deriving clone for code
-        let c11 = Code::new(&[1, 1]);
-        let c01 = Code::new(&[0, 1]);
-        let c10 = Code::new(&[1, 0]);
         let expected = Tree {
-            guess: &Code::new(&[0, 0]),
+            guess: &c00,
             children: btreemap![
                 Response(2, 0) => None,
                 Response(0, 0) => Some(Tree {
