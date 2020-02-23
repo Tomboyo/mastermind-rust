@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 use crate::code;
 use crate::code::Code;
+use crate::response;
 use crate::response::Response;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -13,9 +14,9 @@ pub struct Tree<'a> {
 }
 
 pub fn generate<'a, F>(
-    guesses: Vec<&'a Code>,
-    answers: Vec<&'a Code>,
-    rank: F
+    guesses: &Vec<&'a Code>,
+    answers: &Vec<&'a Code>,
+    rank: &F
 ) -> Tree<'a>
 where F: Fn(&Tree) -> f64 {
     guesses.iter()
@@ -26,8 +27,27 @@ where F: Fn(&Tree) -> f64 {
         //        (recur) otherwise, Tree { guess, generate(...) }
         // then reduce the trees down to the optimal one.
         .map(|guess| {
-            //let map = answers_by_response(&guess, &answers);
-            Tree { guess: guess, children: BTreeMap::new() }
+            let mut children = BTreeMap::new();
+            for (response, remaining_answers) in answers_by_response(&guess, &answers) {
+                if response::is_correct(&response) {
+                    // terminal case
+                    children.insert(response, None);
+                } else {
+                    // recursive case
+                    let remaining_guesses = guesses.iter()
+                        .map(|x| *x)
+                        .filter(|x| x != guess)
+                        .collect();
+                    children.insert(
+                        response,
+                        Some(generate(
+                            &remaining_guesses,
+                            &remaining_answers,
+                            rank)));
+                }
+            }
+            
+            Tree { guess, children }
         }) //dummy
         .fold(None, |acc, tree| match acc {
             None => Some(tree),
@@ -84,9 +104,9 @@ mod tests {
         };
 
         let actual = generate(
-            universe.iter().collect(), // guesses = universe
-            universe.iter().collect(), // answers = universe,
-            rank
+            &universe.iter().collect(), // guesses = universe
+            &universe.iter().collect(), // answers = universe,
+            &rank
         );
         
         /*
@@ -100,21 +120,21 @@ mod tests {
         let expected = Tree {
             guess: &c00,
             children: btreemap![
-                Response(2, 0) => None,
-                Response(0, 0) => Some(Tree {
+                Response(2, 0, 0) => None,
+                Response(0, 0, 2) => Some(Tree {
                     guess: &c11,
                     children: btreemap![
-                        Response(2, 0) => None,
+                        Response(2, 0, 2) => None,
                     ]
                 }),
-                Response(1, 0) => Some(Tree {
+                Response(1, 0, 1) => Some(Tree {
                     guess: &c01,
                     children: btreemap![
-                        Response(2, 0) => None,
-                        Response(0, 2) => Some(Tree {
+                        Response(2, 0, 0) => None,
+                        Response(0, 2, 0) => Some(Tree {
                             guess: &c10,
                             children: btreemap![
-                                Response(2, 0) => None,
+                                Response(2, 0, 0) => None,
                             ]
                         })
                     ]

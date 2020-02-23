@@ -12,7 +12,7 @@ pub fn universe<'a>(_length: usize, _base: usize) -> Vec<Code<'a>> {
     ]
 }
 
-pub fn compare(_left: &Code, _right: &Code) -> Response {
+pub fn compare(left: &Code, _right: &Code) -> Response {
     // TODO
-    Response(0, 0)
+    Response(left.len(), 0, 0)
 }

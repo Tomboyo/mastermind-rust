@@ -15,6 +15,6 @@ fn main() {
     let universe = code::universe(options.code_length, options.code_base);
     let init_guesses: Vec<&Code> = universe.iter().collect();
     let init_answers: Vec<&Code> = universe.iter().collect();
-    let best_tree = tree::generate(init_guesses, init_answers, rank::by_depth);
+    let best_tree = tree::generate(&init_guesses, &init_answers, &rank::by_depth);
     println!("{:?}", best_tree);
 }
