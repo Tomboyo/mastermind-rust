@@ -8,6 +8,7 @@ mod response;
 mod tree;
 
 use crate::code::Code;
+use crate::tree::Tree;
 use crate::tree::rank;
 
 fn main() {
@@ -15,6 +16,7 @@ fn main() {
     let universe = code::universe(options.code_length, options.code_base);
     let init_guesses: Vec<&Code> = universe.iter().collect();
     let init_answers: Vec<&Code> = universe.iter().collect();
-    let best_tree = tree::generate(&init_guesses, &init_answers, &rank::by_depth);
+    let rank = |tree: &Tree| rank::by_depth(tree) as f64;
+    let best_tree = tree::generate(&init_guesses, &init_answers, &rank);
     println!("{:?}", best_tree);
 }
