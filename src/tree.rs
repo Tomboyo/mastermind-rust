@@ -90,54 +90,27 @@ mod tests {
     fn test_generate() {
         let c00 = &[0, 0][..];
         let c01 = &[0, 1][..];
-        let c10 = &[1, 0][..];
-        let c11 = &[1, 1][..];
-        let universe = vec![c00, c01, c10, c11];
 
         // prefer trees based on their guess; 0,0 is "best".
         let rank = |tree: &Tree| match tree.guess {
             &[0, 0] => 0f64,
             &[0, 1] => 1f64,
-            &[1, 0] => 2f64,
-            &[1, 1] => 3f64,
             x => panic!("Unexpected test code {:?}", x)
         };
 
         let actual = generate(
-            &universe.iter().collect(), // guesses = universe
-            &universe.iter().collect(), // answers = universe,
+            &vec![&c00, &c01],
+            &vec![&c00, &c01],
             &rank
         );
-        
-        /*
-        Expect the following tree
-        (00, { (2,0) => (),
-               (0,0) => (11, { (2,0) => () }),
-               (1,0) => (01, { (2,0) => (),
-                               (0,2) => (10, { (2,0) => () })
-                             })})
-        */
+
         let expected = Tree {
             guess: &c00,
             children: btreemap![
                 Response(2, 0, 0) => None,
-                Response(0, 0, 2) => Some(Tree {
-                    guess: &c11,
-                    children: btreemap![
-                        Response(2, 0, 2) => None,
-                    ]
-                }),
                 Response(1, 0, 1) => Some(Tree {
                     guess: &c01,
-                    children: btreemap![
-                        Response(2, 0, 0) => None,
-                        Response(0, 2, 0) => Some(Tree {
-                            guess: &c10,
-                            children: btreemap![
-                                Response(2, 0, 0) => None,
-                            ]
-                        })
-                    ]
+                    children: btreemap![Response(2, 0, 0) => None]
                 }),
             ],
         };
