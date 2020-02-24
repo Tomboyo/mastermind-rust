@@ -48,7 +48,7 @@ where F: Fn(&Tree) -> f64 {
             }
             
             Tree { guess, children }
-        }) //dummy
+        })
         .fold(None, |acc, tree| match acc {
             None => Some(tree),
             Some(best) => Some(select(best, tree, &rank))
@@ -69,7 +69,7 @@ fn answers_by_response<'a>(
         })
 }
 
-pub fn select<'a, F>(
+fn select<'a, F>(
     left: Tree<'a>,
     right: Tree<'a>,
     rank: &F
