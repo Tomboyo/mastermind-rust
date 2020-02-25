@@ -9,23 +9,31 @@ use crate::response::Response;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Tree<'a> {
-    guess: &'a Code<'a>,
+    guess: Code<'a>,
     children: BTreeMap<Response, Option<Tree<'a>>>,
 }
 
+pub fn generate_exhaustively<F>(
+    code_length: usize,
+    code_base: usize,
+    rank: &F,
+) -> Tree<'_>
+where F: Fn(&Tree) -> f64 {
+    let universe = code::universe(code_length, code_base);
+    generate(
+        universe.clone(),
+        universe.clone(),
+        rank
+    )
+}
+
 pub fn generate<'a, F>(
-    guesses: &Vec<&'a Code>,
-    answers: &Vec<&'a Code>,
+    guesses: Vec<Code<'a>>,
+    answers: Vec<Code<'a>>,
     rank: &F
 ) -> Tree<'a>
 where F: Fn(&Tree) -> f64 {
     guesses.iter()
-        // map each guess to (guess, answers-by-response)
-        // map each (g, abr) to a tree
-        //    map abr to a collection
-        //        (term)  if r is correct, append an empty tree
-        //        (recur) otherwise, Tree { guess, generate(...) }
-        // then reduce the trees down to the optimal one.
         .map(|guess| {
             let mut children = BTreeMap::new();
             for (response, remaining_answers) in answers_by_response(&guess, &answers) {
@@ -41,8 +49,8 @@ where F: Fn(&Tree) -> f64 {
                     children.insert(
                         response,
                         Some(generate(
-                            &remaining_guesses,
-                            &remaining_answers,
+                            remaining_guesses,
+                            remaining_answers,
                             rank)));
                 }
             }
@@ -58,8 +66,8 @@ where F: Fn(&Tree) -> f64 {
 
 fn answers_by_response<'a>(
     guess: &Code,
-    answers: &Vec<&'a Code>,
-) -> BTreeMap<Response, Vec<&'a Code<'a>>> {
+    answers: &Vec<Code<'a>>,
+) -> BTreeMap<Response, Vec<Code<'a>>> {
     answers.iter()
         .fold(BTreeMap::new(), |mut map, answer| {
             map.entry(code::compare(guess, answer))
@@ -99,8 +107,8 @@ mod tests {
         };
 
         let actual = generate(
-            &vec![&c00, &c01],
-            &vec![&c00, &c01],
+            vec![&c00, &c01],
+            vec![&c00, &c01],
             &rank
         );
 
