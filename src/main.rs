@@ -1,5 +1,6 @@
-#[cfg(test)]
-#[macro_use]
+extern crate num_traits;
+
+#[cfg(test)] #[macro_use]
 extern crate maplit;
 
 mod code;
@@ -18,6 +19,6 @@ fn main() {
         options.code_base,
         &rank
     );
-    
+
     println!("{:?}", best_tree);
 }

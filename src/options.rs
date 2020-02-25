@@ -4,5 +4,5 @@ pub struct Options {
 }
 
 pub fn from_stdin() -> Options {
-    Options { code_length: 0, code_base: 0 }
+    Options { code_length: 2, code_base: 2 }
 }

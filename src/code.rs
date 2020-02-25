@@ -1,20 +1,34 @@
+use std::collections::HashSet;
 use std::iter;
+
+use num_traits::ToPrimitive;
 
 use crate::response::Response;
 
-pub type Code<'a> = &'a [usize];
+pub type Code = Vec<usize>;
 
-pub fn universe<'a>(_length: usize, _base: usize) -> Vec<Code<'a>> {
-    // todo
-    vec![
-        &[0, 0],
-        &[0, 1],
-        &[1, 0],
-        &[1, 1],
-    ]
+pub fn universe<'a>(length: usize, base: usize) -> HashSet<Code> {
+    let mut acc = HashSet::new();
+
+    let mut data: Vec<usize> = iter::repeat(0).take(length).collect();
+    acc.insert(data.clone());
+
+    let codes_remaining = base.pow(length.to_u32().unwrap()) - 1;
+    for _i in 0..(codes_remaining) {
+        let mut place = 0;
+        data[place] += 1;
+        while data[place] == base {
+            data[place] = 0;
+            place += 1;
+            data[place] += 1;
+        }
+        acc.insert(data.clone());
+    }
+
+    acc
 }
 
-pub fn compare(left: Code, right: Code) -> Response {
+pub fn compare(left: &Code, right: &Code) -> Response {
     let mut left_mask: Vec<bool> = iter::repeat(true).take(left.len())
         .collect();
     let mut result = Response(0, 0, 0);
@@ -55,9 +69,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_universe() {
+        assert_eq!(
+            universe(3, 2),
+            hashset![
+                vec![0, 0, 0], vec![0, 0, 1], vec![0, 1, 0], vec![0, 1, 1],
+                vec![1, 0, 0], vec![1, 0, 1], vec![1, 1, 0], vec![1, 1, 1]],
+            "universe() must generate all codes with the given length and base"
+        );
+    }
+
+    #[test]
     fn test_compare_all_correct() {
         assert_eq!(
-            compare(&[0], &[0]),
+            compare(&vec![0], &vec![0]),
             Response(1, 0, 0),
             "Matching codes must generate a Response indicating that all \
             digits are equal"
@@ -67,7 +92,7 @@ mod tests {
     #[test]
     fn test_compare_none_correct() {
         assert_eq!(
-            compare(&[0], &[1]),
+            compare(&vec![0], &vec![1]),
             Response(0, 0, 1),
             "Disjoint codes must generate a Response indicating neither \
             correct nor misplaced digits"
@@ -77,7 +102,7 @@ mod tests {
     #[test]
     fn test_compare_misplaced_digits() {
         assert_eq!(
-            compare(&[0, 1], &[1, 0]),
+            compare(&vec![0, 1], &vec![1, 0]),
             Response(0, 2, 0),
             "Codes with equal digits in unequal positions must generate a 
             Response indicating the number of misplaced digits"
@@ -87,7 +112,7 @@ mod tests {
     #[test]
     fn test_compare_precedence() {
         assert_eq!(
-            compare(&[0, 1], &[0, 0]),
+            compare(&vec![0, 1], &vec![0, 0]),
             Response(1, 0, 1),
             "Any digit which matches exactly cannot count towards misplaced \
             digits in a Response (in this instance, the 0 on the left matches \
@@ -99,7 +124,7 @@ mod tests {
     #[test]
     fn test_compare_misplace_exhaustion() {
         assert_eq!(
-            compare(&[0, 2, 2], &[1, 0, 0]),
+            compare(&vec![0, 2, 2], &vec![1, 0, 0]),
             Response(0, 1, 2),
             "Any digit which counts towards the number of misplaced digits in \
             a Response may count only once (in this instance, the 0 on the \

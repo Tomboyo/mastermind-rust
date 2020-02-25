@@ -23,25 +23,23 @@ mod tests {
 
     #[test]
     fn test_by_depth() {
-        let arbitrary_guess = &&[0][..];
-
         assert_eq!(3, by_depth(
             &Tree {
-                guess: arbitrary_guess,
+                guess: vec![0],
                 children: btreemap![
                     Response(2, 0, 0) => None,
                     Response(0, 0, 0) => Some(Tree {
-                        guess: arbitrary_guess,
+                        guess: vec![0],
                         children: btreemap![
                             Response(2, 0, 0) => None
                         ]
                     }),
                     Response(1, 0, 0) => Some(Tree {
-                        guess: arbitrary_guess,
+                        guess: vec![0],
                         children: btreemap![
                             Response(2, 0, 0) => None,
                             Response(1, 0, 0) => Some(Tree {
-                                guess: arbitrary_guess,
+                                guess: vec![0],
                                 children: btreemap![
                                     Response(2, 0, 0) => None
                                 ]
@@ -56,7 +54,7 @@ mod tests {
     #[test]
     fn test_by_depth_minimum_value() {
         assert_eq!(1, by_depth(
-            &Tree { guess: &&[0][..], children: btreemap![] }
+            &Tree { guess: vec![0], children: btreemap![] }
         ));
     }
 }

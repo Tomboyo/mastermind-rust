@@ -8,30 +8,30 @@ use crate::response;
 use crate::response::Response;
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct Tree<'a> {
-    guess: Code<'a>,
-    children: BTreeMap<Response, Option<Tree<'a>>>,
+pub struct Tree {
+    guess: Code,
+    children: BTreeMap<Response, Option<Tree>>,
 }
 
 pub fn generate_exhaustively<F>(
     code_length: usize,
     code_base: usize,
     rank: &F,
-) -> Tree<'_>
+) -> Tree
 where F: Fn(&Tree) -> f64 {
     let universe = code::universe(code_length, code_base);
     generate(
-        universe.clone(),
-        universe.clone(),
+        universe.iter().cloned().collect(),
+        universe.iter().cloned().collect(),
         rank
     )
 }
 
 pub fn generate<'a, F>(
-    guesses: Vec<Code<'a>>,
-    answers: Vec<Code<'a>>,
+    guesses: Vec<Code>,
+    answers: Vec<Code>,
     rank: &F
-) -> Tree<'a>
+) -> Tree
 where F: Fn(&Tree) -> f64 {
     guesses.iter()
         .map(|guess| {
@@ -43,7 +43,7 @@ where F: Fn(&Tree) -> f64 {
                 } else {
                     // recursive case
                     let remaining_guesses = guesses.iter()
-                        .map(|x| *x)
+                        .cloned()
                         .filter(|x| x != guess)
                         .collect();
                     children.insert(
@@ -54,7 +54,8 @@ where F: Fn(&Tree) -> f64 {
                             rank)));
                 }
             }
-            
+
+            let guess = guess.clone();
             Tree { guess, children }
         })
         .fold(None, |acc, tree| match acc {
@@ -64,24 +65,24 @@ where F: Fn(&Tree) -> f64 {
         .expect("The should be at least one tree")
 }
 
-fn answers_by_response<'a>(
+fn answers_by_response(
     guess: &Code,
-    answers: &Vec<Code<'a>>,
-) -> BTreeMap<Response, Vec<Code<'a>>> {
+    answers: &Vec<Code>,
+) -> BTreeMap<Response, Vec<Code>> {
     answers.iter()
         .fold(BTreeMap::new(), |mut map, answer| {
             map.entry(code::compare(guess, answer))
                 .or_insert(Vec::new())
-                .push(answer);
+                .push(answer.clone());
             map
         })
 }
 
-fn select<'a, F>(
-    left: Tree<'a>,
-    right: Tree<'a>,
+fn select<F>(
+    left: Tree,
+    right: Tree,
     rank: &F
-) -> Tree<'a>
+) -> Tree
 where F: Fn(&Tree) -> f64 {
     if rank(&left) <= rank(&right) {
         left
@@ -96,28 +97,25 @@ mod tests {
 
     #[test]
     fn test_generate() {
-        let c00 = &[0, 0][..];
-        let c01 = &[0, 1][..];
-
         // prefer trees based on their guess; 0,0 is "best".
-        let rank = |tree: &Tree| match tree.guess {
+        let rank = |tree: &Tree| match &tree.guess[..] {
             &[0, 0] => 0f64,
             &[0, 1] => 1f64,
             x => panic!("Unexpected test code {:?}", x)
         };
 
         let actual = generate(
-            vec![&c00, &c01],
-            vec![&c00, &c01],
+            vec![vec![0, 0], vec![0, 1]],
+            vec![vec![0, 0], vec![0, 1]],
             &rank
         );
 
         let expected = Tree {
-            guess: &c00,
+            guess: vec![0, 0],
             children: btreemap![
                 Response(2, 0, 0) => None,
                 Response(1, 0, 1) => Some(Tree {
-                    guess: &c01,
+                    guess: vec![0, 1],
                     children: btreemap![Response(2, 0, 0) => None]
                 }),
             ],
