@@ -93,7 +93,10 @@ where F: Fn(&Tree) -> f64 {
 
 #[cfg(test)]
 mod tests {
+    use test::Bencher;
+
     use super::*;
+    use crate::tree::rank;
 
     #[test]
     fn test_generate() {
@@ -122,5 +125,11 @@ mod tests {
         };
 
         assert_eq!(actual, expected);
+    }
+
+    #[bench]
+    fn test_generate_exhausively(bencher: &mut Bencher) {
+        let rank = |tree: &Tree| rank::by_depth(tree) as f64;
+        bencher.iter(|| generate_exhaustively(2, 2, &rank))
     }
 }

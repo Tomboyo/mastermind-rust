@@ -1,4 +1,7 @@
+#![feature(test)]
+
 extern crate num_traits;
+extern crate test;
 
 #[cfg(test)] #[macro_use]
 extern crate maplit;
