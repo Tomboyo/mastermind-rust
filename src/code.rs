@@ -7,7 +7,7 @@ use crate::response::Response;
 
 pub type Code = Vec<usize>;
 
-pub fn universe<'a>(length: usize, base: usize) -> HashSet<Code> {
+pub fn universe(length: usize, base: usize) -> HashSet<Code> {
     let mut acc = HashSet::new();
 
     let mut data: Vec<usize> = iter::repeat(0).take(length).collect();
