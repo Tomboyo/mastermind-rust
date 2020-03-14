@@ -27,10 +27,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_by_depth() {
+    fn test_by_depth_u32() {
         let arbitrary = vec![0];
-
-        assert_eq!(3f64, by_depth(
+        assert_eq!(3u32, by_depth_u32(
             &RefTree {
                 guess: &arbitrary,
                 children: btreemap![
@@ -59,8 +58,8 @@ mod tests {
     }
 
     #[test]
-    fn test_by_depth_minimum_value() {
-        assert_eq!(1f64, by_depth(
+    fn test_by_depth_u32_minimum_value() {
+        assert_eq!(1u32, by_depth_u32(
             &RefTree { guess: &vec![0], children: btreemap![] }
         ));
     }
