@@ -27,42 +27,51 @@ where F: Fn(&Tree) -> f64 {
     )
 }
 
-pub fn generate<'a, F>(
+pub fn generate<F>(
     guesses: Vec<Code>,
     answers: Vec<Code>,
     rank: &F
 ) -> Tree
 where F: Fn(&Tree) -> f64 {
     guesses.iter()
-        .map(|guess| {
-            let mut children = BTreeMap::new();
-            for (response, remaining_answers) in answers_by_response(&guess, &answers) {
-                if response::is_correct(&response) {
-                    // terminal case
-                    children.insert(response, None);
-                } else {
-                    // recursive case
-                    let remaining_guesses = guesses.iter()
-                        .cloned()
-                        .filter(|x| x != guess)
-                        .collect();
-                    children.insert(
-                        response,
-                        Some(generate(
-                            remaining_guesses,
-                            remaining_answers,
-                            rank)));
-                }
+        .map(|guess| Tree {
+            guess: guess.clone(),
+            children: generate_children(guess, &guesses, &answers, rank)
+        })
+        .fold(None, |best, candidate| {
+            match best {
+                 None => Some(candidate),
+                 Some(x) => Some(select(x, candidate, &rank))
             }
+        })
+        .expect("There should be at least one tree")
+}
 
-            let guess = guess.clone();
-            Tree { guess, children }
-        })
-        .fold(None, |acc, tree| match acc {
-            None => Some(tree),
-            Some(best) => Some(select(best, tree, &rank))
-        })
-        .expect("The should be at least one tree")
+fn generate_children<F>(
+    guess: &Code,
+    guesses: &Vec<Code>,
+    answers: &Vec<Code>,
+    rank: &F
+) -> BTreeMap<Response, Option<Tree>>
+where F: Fn(&Tree) ->f64 {
+    let mut children = BTreeMap::new();
+    for (response, remaining_answers) in answers_by_response(&guess, &answers) {
+        if response::is_correct(&response) {
+            children.insert(response, None);
+        } else {
+            let remaining_guesses = guesses.iter()
+                .cloned()
+                .filter(|x| x != guess)
+                .collect();
+            children.insert(
+                response,
+                Some(generate(
+                    remaining_guesses,
+                    remaining_answers,
+                    rank)));
+        }
+    }
+    children
 }
 
 fn answers_by_response(
@@ -72,7 +81,7 @@ fn answers_by_response(
     answers.iter()
         .fold(BTreeMap::new(), |mut map, answer| {
             map.entry(code::compare(guess, answer))
-                .or_insert(Vec::new())
+                .or_insert_with(Vec::new)
                 .push(answer.clone());
             map
         })
