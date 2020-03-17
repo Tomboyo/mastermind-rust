@@ -55,8 +55,8 @@ where F: Fn(&RefTree<'a>) -> f64 {
 
 fn generate_children<'a, F>(
     guess: &'a Code,
-    guesses: &Vec<&'a Code>,
-    answers: &Vec<&'a Code>,
+    guesses: &[&'a Code],
+    answers: &[&'a Code],
     rank: &F
 ) -> BTreeMap<Response, Option<RefTree<'a>>>
 where F: Fn(&RefTree<'a>) ->f64 {
@@ -82,7 +82,7 @@ where F: Fn(&RefTree<'a>) ->f64 {
 
 fn answers_by_response<'a> (
     guess: &Code,
-    answers: &Vec<&'a Code>,
+    answers: &[&'a Code],
 ) -> BTreeMap<Response, Vec<&'a Code>> {
     answers.iter()
         .fold(BTreeMap::new(), |mut map, answer| {
