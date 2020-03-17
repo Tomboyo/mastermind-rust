@@ -160,8 +160,14 @@ mod tests {
     }
 
     #[bench]
-    fn test_generate_exhausively(bencher: &mut Bencher) {
+    fn test_generate_exhausively_2_2(bencher: &mut Bencher) {
         let rank = |tree: &RefTree| rank::by_depth(tree) as f64;
         bencher.iter(|| generate_exhaustively(2, 2, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhausively_3_2(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree) as f64;
+        bencher.iter(|| generate_exhaustively(3, 2, &rank))
     }
 }
