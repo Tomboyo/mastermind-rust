@@ -1,4 +1,5 @@
 pub mod rank;
+mod morphology;
 
 use std::collections::BTreeMap;
 
@@ -39,10 +40,16 @@ fn generate<'a, F>(
     rank: &F
 ) -> RefTree<'a>
 where F: Fn(&RefTree<'a>) -> f64 {
+    let mut cache = morphology::IsomorphCache::new();
+
     guesses.iter()
-        .map(|guess| RefTree {
+        .map(|guess| (guess, morphology::answers_by_response(
             guess,
-            children: generate_children(guess, &guesses, &answers, rank)
+            answers.iter().copied())))
+        .filter(|(_guess, morph)| cache.is_new_morph(&morph))
+        .map(|(guess, morph)| RefTree {
+            guess,
+            children: generate_children(guess, &guesses, morph, rank)
         })
         .fold(None, |best: Option<RefTree<'a>>, candidate: RefTree<'a>| {
             match best {
@@ -56,12 +63,12 @@ where F: Fn(&RefTree<'a>) -> f64 {
 fn generate_children<'a, F>(
     guess: &'a Code,
     guesses: &[&'a Code],
-    answers: &[&'a Code],
-    rank: &F
+    morph: BTreeMap<Response, Vec<&'a Code>>,
+    rank: &F,
 ) -> BTreeMap<Response, Option<RefTree<'a>>>
 where F: Fn(&RefTree<'a>) ->f64 {
     let mut children = BTreeMap::new();
-    for (response, remaining_answers) in answers_by_response(&guess, &answers) {
+    for (response, remaining_answers) in morph {
         if response::is_correct(&response) {
             children.insert(response, None);
         } else {
@@ -78,19 +85,6 @@ where F: Fn(&RefTree<'a>) ->f64 {
         }
     }
     children
-}
-
-fn answers_by_response<'a> (
-    guess: &Code,
-    answers: &[&'a Code],
-) -> BTreeMap<Response, Vec<&'a Code>> {
-    answers.iter()
-        .fold(BTreeMap::new(), |mut map, answer| {
-            map.entry(code::compare(guess, answer))
-                .or_insert_with(Vec::new)
-                .push(answer);
-            map
-        })
 }
 
 fn select<'a, F>(
