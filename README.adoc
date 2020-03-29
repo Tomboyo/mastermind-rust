@@ -1,0 +1,54 @@
+= Mastermind - Rust
+
+Determine optimal mastermind plays for different permutations of the rules.
+
+This program determines how to optimally play a game of mastermind with _n_ pegs
+in _m_ colors, supplied by the user at the command line. It aims to do so
+without the aid of heuristics (a la Knuth), just because it is fun. We may add a
+mode which uses heuristics at some point in the future, however.
+
+The current draft recursively expands trees based on sets of possible guesses
+and possible answers. Subsequent guesses partition remaining answers into bins
+keyed by reponse code. Expansion stops when all possible guesses are
+differnetiated into singleton bins by a sequence of guesses. Expanded subtrees
+are compared and optimal trees (by depth) are kept. The best tree is printed.
+
+== Performance Analysis Changelog
+The fun of this project is tuning the codebase, so this is a log of how we are
+improving performance with each change.
+
+Each commit has a table of performance benchmarks (run via nightly bench
+feature.) "Test _m^n_" stands for a benchmark to exhaustively identify the
+optimal mastermind tree of base _m_ and length _n_ (i.e. _n_ pegs from any of
+_m_ colors, of which there are _m^n_.)
+
+=== 2. Commit ab24f371689d6cf5f9200934251f7f206003c87b
+_Caching_: Do not evaluate a RefTree if the guess code from which it is
+generated produces an answers-by-response mapping that is _isomorphic_ to one
+already evaluated.
+
+Performance Metrics
+|===
+| Test _m^n_  | 2^2                                 | 3^2
+| Performance | 32,362 ns/iter (+/- 469)            | 6,331,574 ns/iter (+/- 210,728)
+| Change      | approx. 37% (19,209 ns/iter) faster | approx. 94% (99,771,028 ns/iter) faster
+|===
+
+=== 1. Commit c5c572d551d75b5abdcf121703ac57385a27902f
+_Reference Passing_: Eliminate unecessary data cloning by sharing immutable
+references to Code instances.
+
+Performance Metrics
+|===
+| Test _m^n_  | 2^2                                 | 3^2
+| Performance | 51,571 ns/iter (+/- 404)            | 106,102,602 ns/iter (+/- 1,280,047)
+| Change      | approx. 25% (17,602 ns/iter) faster | N/A
+|===
+
+=== 0. Commit cf1cf4f24be35b0d41e7ee09132f92b94807cf5e
+_Initial Commit_: Rough and unoptimized. Something simple on the screen.
+
+|===
+| Test _m^n_  | 2^2
+| Performance | 69,173 ns/iter (+/- 1,451)
+|===
