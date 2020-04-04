@@ -22,10 +22,16 @@ feature.) "Test _m^n_" stands for a benchmark to exhaustively identify the
 optimal mastermind tree of base _m_ and length _n_ (i.e. _n_ pegs from any of
 _m_ colors, of which there are _m^n_.)
 
-=== 2. Commit ab24f371689d6cf5f9200934251f7f206003c87b
+The `flamegraphs/` directory contains so-called "flamegraphs" <<cpuflamegraphs>>
+generated using Brendan Gregg's toolchain <<brendangregg>> and perf. There is
+one SVG per benchmark per tag (if that tag is capable of running the benchmark);
+each hints at fertile ground for performance improvements.
+
+=== Tag 2-isomorph-cache
 _Caching_: Do not evaluate a RefTree if the guess code from which it is
 generated produces an answers-by-response mapping that is _isomorphic_ to one
-already evaluated.
+already evaluated. This eliminates a great deal of memory management, esp. for
+larger problem sets, by pruning candidates across all levels of evaluation.
 
 Performance Metrics
 |===
@@ -34,7 +40,7 @@ Performance Metrics
 | Change      | approx. 37% (19,209 ns/iter) faster | approx. 94% (99,771,028 ns/iter) faster
 |===
 
-=== 1. Commit c5c572d551d75b5abdcf121703ac57385a27902f
+=== Tag 1-reference-passing
 _Reference Passing_: Eliminate unecessary data cloning by sharing immutable
 references to Code instances.
 
@@ -45,10 +51,15 @@ Performance Metrics
 | Change      | approx. 25% (17,602 ns/iter) faster | N/A
 |===
 
-=== 0. Commit cf1cf4f24be35b0d41e7ee09132f92b94807cf5e
+=== Tag 0-init
 _Initial Commit_: Rough and unoptimized. Something simple on the screen.
 
 |===
 | Test _m^n_  | 2^2
 | Performance | 69,173 ns/iter (+/- 1,451)
 |===
+
+[bibliography]
+== References
+ - [[[cpuflamegraphs, 1]]] http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
+ - [[[brendangregg, 2]]] https://github.com/brendangregg/FlameGraph
