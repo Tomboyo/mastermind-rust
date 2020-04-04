@@ -33,6 +33,9 @@ generated produces an answers-by-response mapping that is _isomorphic_ to one
 already evaluated. This eliminates a great deal of memory management, esp. for
 larger problem sets, by pruning candidates across all levels of evaluation.
 
+link:flamegraphs/1-reference-passing[Previous Flamegraphs]
+link:flamegraphs/2-isomorph-cache[Current Flamegraphs]
+
 Performance Metrics
 |===
 | Test _m^n_  | 2^2                                 | 3^2
@@ -44,6 +47,9 @@ Performance Metrics
 _Reference Passing_: Eliminate unecessary data cloning by sharing immutable
 references to Code instances.
 
+link:flamegraphs/0-init[Previous Flamegraphs]
+link:flamegraphs/1-reference-passing[Current Flamegraphs]
+
 Performance Metrics
 |===
 | Test _m^n_  | 2^2                                 | 3^2
@@ -53,6 +59,8 @@ Performance Metrics
 
 === Tag 0-init
 _Initial Commit_: Rough and unoptimized. Something simple on the screen.
+
+link:flamegraphs/0-init[Current Flamegraphs]
 
 |===
 | Test _m^n_  | 2^2
