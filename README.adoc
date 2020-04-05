@@ -10,31 +10,42 @@ mode which uses heuristics at some point in the future, however.
 The current draft recursively expands trees based on sets of possible guesses
 and possible answers. Subsequent guesses partition remaining answers into bins
 keyed by reponse code. Expansion stops when all possible guesses are
-differnetiated into singleton bins by a sequence of guesses. Expanded subtrees
+differentiated into singleton bins by a sequence of guesses. Expanded subtrees
 are compared and optimal trees (by depth) are kept. The best tree is printed.
 
 == Performance Analysis Changelog
-The fun of this project is tuning the codebase, so this is a log of how we are
-improving performance with each change.
+The fun of this project is tuning the codebase, so below we discuss how we
+collect and analyze performance data and what measured changes we have made so
+far (all of which are tagged in git).
 
-Each commit has a table of performance benchmarks (run via nightly bench
-feature.) "Test _m^n_" stands for a benchmark to exhaustively identify the
+=== Performance Analysis with Perf and Hotspot
+I originally generated "flamegraphs" <<cpuflamegraphs>> with Brendan Gregg's
+toolchain <<brendangregg>>. Now I prefer to analyze perf data with hotspot
+<<hotspot>>.
+
+Benchmark tests are defined using the `#[bench]` nightly feature. We build, run,
+and analyze performance using the followng commands:
+[source, bash]
+----
+cargo clean
+cargo bench --no-run
+perf record --call-graph dwarf target/release/deps/mastermind-xyz --bench <1>
+hotspot perf.data
+----
+<1> We can pass the name of a specific bench after the `--bench` argument as
+    well.
+
+=== Changelog
+Each tagged performance improvement is described below by a table of performance
+benchmarks. "Test _m^n_" stands for a benchmark to exhaustively identify the
 optimal mastermind tree of base _m_ and length _n_ (i.e. _n_ pegs from any of
 _m_ colors, of which there are _m^n_.)
 
-The `flamegraphs/` directory contains so-called "flamegraphs" <<cpuflamegraphs>>
-generated using Brendan Gregg's toolchain <<brendangregg>> and perf. There is
-one SVG per benchmark per tag (if that tag is capable of running the benchmark);
-each hints at fertile ground for performance improvements.
-
-=== Tag 2-isomorph-cache
+==== Tag 2-isomorph-cache
 _Caching_: Do not evaluate a RefTree if the guess code from which it is
 generated produces an answers-by-response mapping that is _isomorphic_ to one
 already evaluated. This eliminates a great deal of memory management, esp. for
 larger problem sets, by pruning candidates across all levels of evaluation.
-
-link:flamegraphs/1-reference-passing[Previous Flamegraphs]
-link:flamegraphs/2-isomorph-cache[Current Flamegraphs]
 
 Performance Metrics
 |===
@@ -43,12 +54,9 @@ Performance Metrics
 | Change      | approx. 37% (19,209 ns/iter) faster | approx. 94% (99,771,028 ns/iter) faster
 |===
 
-=== Tag 1-reference-passing
+==== Tag 1-reference-passing
 _Reference Passing_: Eliminate unecessary data cloning by sharing immutable
 references to Code instances.
-
-link:flamegraphs/0-init[Previous Flamegraphs]
-link:flamegraphs/1-reference-passing[Current Flamegraphs]
 
 Performance Metrics
 |===
@@ -57,10 +65,8 @@ Performance Metrics
 | Change      | approx. 25% (17,602 ns/iter) faster | N/A
 |===
 
-=== Tag 0-init
+==== Tag 0-init
 _Initial Commit_: Rough and unoptimized. Something simple on the screen.
-
-link:flamegraphs/0-init[Current Flamegraphs]
 
 |===
 | Test _m^n_  | 2^2
@@ -71,3 +77,4 @@ link:flamegraphs/0-init[Current Flamegraphs]
 == References
  - [[[cpuflamegraphs, 1]]] http://www.brendangregg.com/FlameGraphs/cpuflamegraphs.html
  - [[[brendangregg, 2]]] https://github.com/brendangregg/FlameGraph
+ - [[[hotspot, 3]]] https://github.com/KDAB/hotspot
