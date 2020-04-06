@@ -41,31 +41,42 @@ fn generate<'a, F>(
 ) -> RefTree<'a>
 where F: Fn(&RefTree<'a>) -> f64 {
     let mut cache = morphology::IsomorphCache::new();
+    let mut best = None;
+    let mut best_rank = (answers.len() + 1) as f64;
 
-    guesses.iter()
-        .map(|guess| (guess, morphology::answers_by_response(
+    for guess in &guesses {
+        let morph = morphology::answers_by_response(
             guess,
-            answers.iter().copied())))
-        .filter(|(_guess, morph)| cache.is_new_morph(&morph))
-        .map(|(guess, morph)| RefTree {
-            guess,
-            children: generate_children(guess, &guesses, morph, rank)
-        })
-        .fold(None, |best: Option<RefTree<'a>>, candidate: RefTree<'a>| {
-            match best {
-                 None => Some(candidate),
-                 Some(x) => Some(select(x, candidate, &rank))
+            answers.iter().copied());
+        
+        if !cache.is_new_morph(&morph) {
+            continue;
+        }
+
+        let candidate = subtree(guess, &guesses, morph, rank, best_rank);
+        if let Some(x) = candidate {
+            let candidate_rank = rank(&x);
+            if candidate_rank < best_rank {
+                best = Some(x);
+                best_rank = candidate_rank;
             }
-        })
-        .expect("There should be at least one tree")
+        }
+    }
+    
+    best.expect("There should be at least one tree")
 }
 
-fn generate_children<'a, F>(
+// TODO: RefTree::new(...)?
+// calculate the children for each answers-by-response group given a set of
+// guesses. If any of the childrens' rank is >= the threshold, derivation halts
+// and an empty is returned.
+fn subtree<'a, F>(
     guess: &'a Code,
     guesses: &[&'a Code],
     morph: BTreeMap<Response, Vec<&'a Code>>,
     rank: &F,
-) -> BTreeMap<Response, Option<RefTree<'a>>>
+    threshold: f64
+) -> Option<RefTree<'a>>
 where F: Fn(&RefTree<'a>) ->f64 {
     let mut children = BTreeMap::new();
     for (response, remaining_answers) in morph {
@@ -76,28 +87,19 @@ where F: Fn(&RefTree<'a>) ->f64 {
                 .cloned()
                 .filter(|x| *x != guess)
                 .collect();
-            children.insert(
-                response,
-                Some(generate(
-                    remaining_guesses,
-                    remaining_answers,
-                    rank)));
+            let child = generate(
+                remaining_guesses,
+                remaining_answers,
+                rank);
+            if rank(&child) + 1.0 < threshold {
+                children.insert(response, Some(child));
+            } else {
+                // A best worst-case is already too bad, so quit now
+                return None;
+            }
         }
     }
-    children
-}
-
-fn select<'a, F>(
-    left: RefTree<'a>,
-    right: RefTree<'a>,
-    rank: &F
-) -> RefTree<'a>
-where F: Fn(&RefTree<'a>) -> f64 {
-    if rank(&left) <= rank(&right) {
-        left
-    } else {
-        right
-    }
+    Some(RefTree { guess, children })
 }
 
 impl<'a> RefTree<'a> {
