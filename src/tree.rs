@@ -30,21 +30,38 @@ where F: Fn(&RefTree) -> usize {
     generate(
         universe.iter().collect(),
         universe.iter().collect(),
-        rank
-    ).to_tree()
+        rank,
+        universe.len() + 1 // sentinel -- larger than any optimal tree
+    )
+    .expect("There should be at least one tree")
+    .to_tree()
 }
 
+/// guesses: list of codes available to guess
+/// answers: list of codes which may be answers based on guesses made so far
+/// rank: a function to rank a tree by its depth, lower numbers are better.
+/// optimal_rank: A ranking which must be beaten by any candidate subtree. If a
+///     subtree meets or exceeds this rank, it is discarded. If no trees can
+///     meet this rank, we return None.
 fn generate<'a, F>(
     guesses: Vec<&'a Code>,
     answers: Vec<&'a Code>,
-    rank: &F
-) -> RefTree<'a>
+    rank: &F,
+    optimal_rank: usize
+) -> Option<RefTree<'a>>
 where F: Fn(&RefTree<'a>) -> usize {
-    let mut cache = morphology::IsomorphCache::new();
-    let mut best = None;
-    let mut best_rank = answers.len() + 1;
+    if optimal_rank == 0 {
+        // In order for the parent tree to beat the optimal_rank, this subtree
+        // must already have differentiated all answers, which is impossible.
+        return None
+    }
 
-    for guess in &guesses {
+    let mut cache = morphology::IsomorphCache::new();
+    // local_optimal_rank <= optimal_rank and shrinks as optimal trees are found
+    let mut local_optimal_rank = optimal_rank;
+    let mut optimal_tree = None;
+
+    'guesses: for guess in &guesses {
         let morph = morphology::answers_by_response(
             guess,
             answers.iter().copied());
@@ -53,53 +70,46 @@ where F: Fn(&RefTree<'a>) -> usize {
             continue;
         }
 
-        let candidate = subtree(guess, &guesses, morph, rank, best_rank);
-        if let Some(x) = candidate {
-            let candidate_rank = rank(&x);
-            if candidate_rank < best_rank {
-                best = Some(x);
-                best_rank = candidate_rank;
-            }
-        }
-    }
-    
-    best.expect("There should be at least one tree")
-}
-
-// TODO: RefTree::new(...)?
-// calculate the children for each answers-by-response group given a set of
-// guesses. If any of the childrens' rank is >= the threshold, derivation halts
-// and an empty is returned.
-fn subtree<'a, F>(
-    guess: &'a Code,
-    guesses: &[&'a Code],
-    morph: BTreeMap<Response, Vec<&'a Code>>,
-    rank: &F,
-    threshold: usize
-) -> Option<RefTree<'a>>
-where F: Fn(&RefTree<'a>) -> usize {
-    let mut children = BTreeMap::new();
-    for (response, remaining_answers) in morph {
-        if response::is_correct(&response) {
-            children.insert(response, None);
-        } else {
-            let remaining_guesses = guesses.iter()
-                .cloned()
-                .filter(|x| *x != guess)
-                .collect();
-            let child = generate(
-                remaining_guesses,
-                remaining_answers,
-                rank);
-            if rank(&child) + 1 < threshold {
-                children.insert(response, Some(child));
+        let mut children = BTreeMap::new();
+        for (response, remaining_answers) in morph {
+            if response::is_correct(&response) {
+                children.insert(response, None);
             } else {
-                // A best worst-case is already too bad, so quit now
-                return None;
+                let remaining_guesses = guesses.iter()
+                    .cloned()
+                    .filter(|x| x != guess)
+                    .collect();
+                let child = generate(
+                    remaining_guesses,
+                    remaining_answers,
+                    rank,
+                    local_optimal_rank - 1);
+
+                // - If generate(...) returns None, then the optimal worst-case
+                // tree decending the current tree exceeds the desired rank, and
+                // therefore the current tree rooted at `guess` does as well. we
+                // do not need to evaluate further answer-by-response groups.
+                // - Otherwise if generate(...) returns Some, then we need to
+                // continue evaluating answer-by-response groups to determine if
+                // this tree is optimal or not.
+                match child {
+                    None => continue 'guesses,
+                    Some(_) => children.insert(response, child),
+                };
             }
         }
+        
+        let candidate = RefTree { guess, children };
+        let candidate_rank = rank(&candidate);
+        if candidate_rank < local_optimal_rank {
+            optimal_tree = Some(candidate);
+            // Shrink local_optimal_rank to save time evaluating remaining
+            // guesses
+            local_optimal_rank = candidate_rank;
+        }
     }
-    Some(RefTree { guess, children })
+
+    optimal_tree
 }
 
 impl<'a> RefTree<'a> {
@@ -138,7 +148,8 @@ mod tests {
         let actual = generate(
             vec![&c00, &c01],
             vec![&c00, &c01],
-            &rank
+            &rank,
+            3
         );
 
         let expected = RefTree {
@@ -152,7 +163,7 @@ mod tests {
             ],
         };
 
-        assert_eq!(actual, expected);
+        assert_eq!(actual, Some(expected));
     }
 
     #[bench]
