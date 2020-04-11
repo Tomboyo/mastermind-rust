@@ -53,9 +53,10 @@ waste work for larger problem sets.
 
 Performance Metrics
 |===
-| Test _m^n_  | 2^2                                   | 3^2
-| Performance | 24,993 ns/iter (+/- 340)              | 312,265 ns/iter (+/- 23,414)
-| Change      | approx. 23% (7,369 ns/iter) reduction | approx. 95% (6,019,309 ns/iter) reduction
+| Test _m^n_ | Performance                        | Change
+| 2^2        | 24,993 ns/iter (+/- 340)           | approx. 23% (7,369 ns/iter) reduction
+| 3^2        | 312,265 ns/iter (+/- 23,414)       | approx. 95% (6,019,309 ns/iter) reduction
+| 3^3        | 32,303,124 ns/iter (+/- 5,210,690) | N/A
 |===
 
 ==== Tag 2-isomorph-cache
@@ -66,9 +67,9 @@ larger problem sets, by pruning candidates across all levels of evaluation.
 
 Performance Metrics
 |===
-| Test _m^n_  | 2^2                                    | 3^2
-| Performance | 32,362 ns/iter (+/- 469)               | 6,331,574 ns/iter (+/- 210,728)
-| Change      | approx. 37% (19,209 ns/iter) reduction | approx. 94% (99,771,028 ns/iter) reduction
+| Test _m^n_ | Performance                     | Change
+| 2^2        | 32,362 ns/iter (+/- 469)        | approx. 37% (19,209 ns/iter) reduction
+| 3^2        | 6,331,574 ns/iter (+/- 210,728) | approx. 94% (99,771,028 ns/iter) reduction
 |===
 
 ==== Tag 1-reference-passing
@@ -77,17 +78,17 @@ references to Code instances.
 
 Performance Metrics
 |===
-| Test _m^n_  | 2^2                                    | 3^2
-| Performance | 51,571 ns/iter (+/- 404)               | 106,102,602 ns/iter (+/- 1,280,047)
-| Change      | approx. 25% (17,602 ns/iter) reduction | N/A
+| Test _m^n_ | Performance                         | Change
+| 2^2        | 51,571 ns/iter (+/- 404)            | approx. 25% (17,602 ns/iter) reduction
+| 3^2        | 106,102,602 ns/iter (+/- 1,280,047) | N/A
 |===
 
 ==== Tag 0-init
 _Initial Commit_: Rough and unoptimized. Something simple on the screen.
 
 |===
-| Test _m^n_  | 2^2
-| Performance | 69,173 ns/iter (+/- 1,451)
+| Test _m^n_ | Performance                | Change
+| 2^2        | 69,173 ns/iter (+/- 1,451) | N/A
 |===
 
 [bibliography]
