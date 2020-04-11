@@ -25,7 +25,7 @@ pub fn generate_exhaustively<F>(
     code_base: usize,
     rank: &F,
 ) -> Tree
-where F: Fn(&RefTree) -> f64 {
+where F: Fn(&RefTree) -> usize {
     let universe = code::universe(code_length, code_base);
     generate(
         universe.iter().collect(),
@@ -39,10 +39,10 @@ fn generate<'a, F>(
     answers: Vec<&'a Code>,
     rank: &F
 ) -> RefTree<'a>
-where F: Fn(&RefTree<'a>) -> f64 {
+where F: Fn(&RefTree<'a>) -> usize {
     let mut cache = morphology::IsomorphCache::new();
     let mut best = None;
-    let mut best_rank = (answers.len() + 1) as f64;
+    let mut best_rank = answers.len() + 1;
 
     for guess in &guesses {
         let morph = morphology::answers_by_response(
@@ -75,9 +75,9 @@ fn subtree<'a, F>(
     guesses: &[&'a Code],
     morph: BTreeMap<Response, Vec<&'a Code>>,
     rank: &F,
-    threshold: f64
+    threshold: usize
 ) -> Option<RefTree<'a>>
-where F: Fn(&RefTree<'a>) ->f64 {
+where F: Fn(&RefTree<'a>) -> usize {
     let mut children = BTreeMap::new();
     for (response, remaining_answers) in morph {
         if response::is_correct(&response) {
@@ -91,7 +91,7 @@ where F: Fn(&RefTree<'a>) ->f64 {
                 remaining_guesses,
                 remaining_answers,
                 rank);
-            if rank(&child) + 1.0 < threshold {
+            if rank(&child) + 1 < threshold {
                 children.insert(response, Some(child));
             } else {
                 // A best worst-case is already too bad, so quit now
@@ -130,8 +130,8 @@ mod tests {
 
         // prefer trees based on their guess; 0,0 is "best".
         let rank = |tree: &RefTree| match &tree.guess[..] {
-            &[0, 0] => 0f64,
-            &[0, 1] => 1f64,
+            &[0, 0] => 0,
+            &[0, 1] => 1,
             x => panic!("Unexpected test code {:?}", x)
         };
 
@@ -157,13 +157,13 @@ mod tests {
 
     #[bench]
     fn test_generate_exhausively_2_2(bencher: &mut Bencher) {
-        let rank = |tree: &RefTree| rank::by_depth(tree) as f64;
+        let rank = |tree: &RefTree| rank::by_depth(tree);
         bencher.iter(|| generate_exhaustively(2, 2, &rank))
     }
 
     #[bench]
     fn test_generate_exhausively_3_2(bencher: &mut Bencher) {
-        let rank = |tree: &RefTree| rank::by_depth(tree) as f64;
+        let rank = |tree: &RefTree| rank::by_depth(tree);
         bencher.iter(|| generate_exhaustively(3, 2, &rank))
     }
 }
