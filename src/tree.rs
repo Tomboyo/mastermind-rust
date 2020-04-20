@@ -75,10 +75,20 @@ where F: Fn(&RefTree<'a>) -> usize {
             if response::is_correct(&response) {
                 children.insert(response, None);
             } else {
-                let remaining_guesses = guesses.iter()
-                    .cloned()
-                    .filter(|x| x != guess)
-                    .collect();
+                let remaining_guesses =
+                    if remaining_answers.len() < 3 {
+                        // in the best case, any guess is either right or
+                        // differentiates the two remaining answers into bins of
+                        // one code each, which is equivalent to guessing a
+                        // remaining answer.
+                        remaining_answers.clone()
+                    } else {
+                        guesses.iter()
+                            .cloned()
+                            .filter(|x| x != guess)
+                            .collect()
+                    };
+
                 let child = generate(
                     remaining_guesses,
                     remaining_answers,
@@ -173,14 +183,50 @@ mod tests {
     }
 
     #[bench]
-    fn test_generate_exhaustively_3_2(bencher: &mut Bencher) {
+    fn test_generate_exhaustively_2_3(bencher: &mut Bencher) {
         let rank = |tree: &RefTree| rank::by_depth(tree);
         bencher.iter(|| generate_exhaustively(3, 2, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_2_4(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(4, 2, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_3_2(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(2, 3, &rank))
     }
 
     #[bench]
     fn test_generate_exhaustively_3_3(bencher: &mut Bencher) {
         let rank = |tree: &RefTree| rank::by_depth(tree);
         bencher.iter(|| generate_exhaustively(3, 3, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_3_4(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(4, 3, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_4_2(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(2, 4, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_4_3(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(3, 4, &rank))
+    }
+
+    #[bench]
+    fn test_generate_exhaustively_5_2(bencher: &mut Bencher) {
+        let rank = |tree: &RefTree| rank::by_depth(tree);
+        bencher.iter(|| generate_exhaustively(2, 5, &rank))
     }
 }

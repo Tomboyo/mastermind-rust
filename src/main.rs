@@ -1,11 +1,10 @@
 #![feature(test)]
 
 extern crate clap;
+#[macro_use]
+extern crate maplit;
 extern crate num_traits;
 extern crate test;
-
-#[cfg(test)] #[macro_use]
-extern crate maplit;
 
 mod code;
 mod options;
