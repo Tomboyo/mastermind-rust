@@ -1,7 +1,7 @@
 #![feature(test)]
 
 extern crate clap;
-#[macro_use]
+#[cfg(test)] #[macro_use]
 extern crate maplit;
 extern crate num_traits;
 extern crate test;
